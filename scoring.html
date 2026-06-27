@@ -141,6 +141,10 @@
         <label for="proctor">Proctor name</label>
         <input type="text" id="proctor" placeholder="e.g. Charissa Sullivan" autocomplete="off">
       </div>
+      <div class="fld sm">
+        <label for="sessionno">Practice Session #</label>
+        <input type="text" id="sessionno" placeholder="e.g. TNJA-0626-SS" autocomplete="off">
+      </div>
       <div class="fld">
         <label for="examdate">Exam date</label>
         <input type="date" id="examdate">
@@ -197,10 +201,13 @@ const PROCEDURES = [
   { key:"pedicures", name:"Pedicures", cats:[
     ["Sanitation/set up",20],["Knowledge of Product",10],["Timing",5],["Set-Up",10],
     ["Use of Equipment",10],["Proper Technique",10],["Filing & shaping",15],["Polish",10],["Sanitation/clean up",10] ]},
-  { key:"sculptured", name:"Individual Sculptured Nails & Nail Tips", cats:[
+  { key:"nailtip", name:"Nail Tip Application", cats:[
     ["Sanitation/set up",20],["Knowledge of Product",10],["Timing",5],["Set-Up",10],
     ["Use of Equipment",10],["Proper Technique",10],["Filing & shaping",15],["Polish",10],["Sanitation/clean up",10] ]},
-  { key:"removals", name:"Individual Removals", cats:[
+  { key:"sculpture", name:"Sculpture", cats:[
+    ["Sanitation/set up",20],["Knowledge of Product",10],["Timing",5],["Set-Up",10],
+    ["Use of Equipment",10],["Proper Technique",10],["Filing & shaping",15],["Polish",10],["Sanitation/clean up",10] ]},
+  { key:"removal", name:"Individual Removal", cats:[
     ["Sanitation/set up",20],["Knowledge of Product",10],["Timing",5],["Set-Up",10],
     ["Use of Equipment",10],["Proper Technique",10],["Filing & shaping",15],["Polish",10],["Sanitation/clean up",10] ]},
   { key:"gel", name:"UV/LED Gel Nails", cats:[
@@ -213,7 +220,7 @@ const STORAGE_KEY = "tnja_exam_session_v2";
 
 let STATE = blankState();
 function blankState(){
-  return { proctor:"", examdate:"", students:[], scores:{}, sigs:{}, times:{}, activeProc:PROCEDURES[0].key, open:{} };
+  return { proctor:"", sessionno:"", examdate:"", students:[], scores:{}, sigs:{}, times:{}, activeProc:PROCEDURES[0].key, open:{} };
 }
 
 const $ = id => document.getElementById(id);
@@ -452,6 +459,7 @@ function clearSig(rawKey){
 
 /* ---------- Setup wiring ---------- */
 $("proctor").addEventListener("input",e=>{STATE.proctor=e.target.value;queueSave();});
+$("sessionno").addEventListener("input",e=>{STATE.sessionno=e.target.value;queueSave();});
 $("examdate").addEventListener("input",e=>{STATE.examdate=e.target.value;queueSave();});
 $("loadNames").addEventListener("click",()=>{ applyRoster(namesFromText($("names").value),"pasted"); });
 $("csv").addEventListener("change",e=>{
@@ -486,7 +494,7 @@ $("exportBtn").addEventListener("click",()=>{
 });
 function exportCSV(){
   const examDatePretty = fmtExamDate(STATE.examdate);
-  const rows=[["Student","Procedure","Category","Max Points","Points Earned","Score Type","Procedure Total","Pass (≥75)","Proctor","Exam Date","Procedure Start","Procedure End","Student Signed","Instructor Signed"]];
+  const rows=[["Student","Procedure","Category","Max Points","Points Earned","Score Type","Procedure Total","Pass (≥75)","Proctor","Practice Session #","Exam Date","Procedure Start","Procedure End","Student Signed","Instructor Signed"]];
   STATE.students.forEach(student=>{
     const stuSigned=STATE.sigs[student+"||student"]?"Yes":"No";
     const insSigned=STATE.sigs[student+"||instructor"]?"Yes":"No";
@@ -496,7 +504,7 @@ function exportCSV(){
       const t=STATE.times[proc.key]||{start:"",end:""};
       proc.cats.forEach((c,idx)=>{
         const s=getScore(student,proc.key,idx);
-        rows.push([student,proc.name,c[0],c[1],s?s.pts:"",s?s.st:"",total,total>=PASS_MARK?"PASS":"NO",STATE.proctor,examDatePretty,t.start,t.end,stuSigned,insSigned]);
+        rows.push([student,proc.name,c[0],c[1],s?s.pts:"",s?s.st:"",total,total>=PASS_MARK?"PASS":"NO",STATE.proctor,STATE.sessionno,examDatePretty,t.start,t.end,stuSigned,insSigned]);
       });
     });
   });
@@ -518,6 +526,7 @@ $("newExamBtn").addEventListener("click",()=>{
   const iso=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");
   STATE.examdate=iso;
   $("proctor").value="";
+  $("sessionno").value="";
   $("examdate").value=iso;
   $("names").value="";
   $("rostermeta").innerHTML="Paste your roster above (names in “Last, First” are fine), then tap “Load these students.”";
@@ -528,14 +537,14 @@ $("newExamBtn").addEventListener("click",()=>{
 $("clearScoresBtn").addEventListener("click",()=>{
   if(!STATE.students.length){ alert("There's no session to clear yet."); return; }
   if(!confirm("Clear all SCORES and signatures, but keep the student list?\n\nExport first if you want a copy — this cannot be undone.")) return;
-  const keepStudents=STATE.students.slice(), keepProctor=STATE.proctor, keepDate=STATE.examdate, keepTimes=STATE.times;
-  STATE=blankState(); STATE.students=keepStudents; STATE.proctor=keepProctor; STATE.examdate=keepDate; STATE.times=keepTimes;
+  const keepStudents=STATE.students.slice(), keepProctor=STATE.proctor, keepSess=STATE.sessionno, keepDate=STATE.examdate, keepTimes=STATE.times;
+  STATE=blankState(); STATE.students=keepStudents; STATE.proctor=keepProctor; STATE.sessionno=keepSess; STATE.examdate=keepDate; STATE.times=keepTimes;
   doSave(); renderTabs(); renderProcTime(); renderRoster();
 });
 $("clearRosterBtn").addEventListener("click",()=>{
   if(!confirm("Clear the ROSTER and start over? This removes all student names, scores, and signatures.\n\nExport first if you want a copy — this cannot be undone.")) return;
-  const keepProctor=STATE.proctor, keepDate=STATE.examdate;
-  STATE=blankState(); STATE.proctor=keepProctor; STATE.examdate=keepDate;
+  const keepProctor=STATE.proctor, keepSess=STATE.sessionno, keepDate=STATE.examdate;
+  STATE=blankState(); STATE.proctor=keepProctor; STATE.sessionno=keepSess; STATE.examdate=keepDate;
   $("names").value="";
   $("rostermeta").innerHTML="Paste your roster above (names in “Last, First” are fine), then tap “Load these students.”";
   $("board").classList.add("hidden");
@@ -559,6 +568,7 @@ window.addEventListener("beforeunload",e=>{
   if(saved && typeof saved==="object" && saved.students){
     STATE=Object.assign(blankState(),saved);
     $("proctor").value=STATE.proctor||"";
+    $("sessionno").value=STATE.sessionno||"";
     $("examdate").value=STATE.examdate||iso;
     if(!STATE.examdate){ STATE.examdate=iso; }
     if(STATE.students.length){
