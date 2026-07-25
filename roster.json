@@ -1,10 +1,11 @@
 {
   "students": [
-    "Add Student Names Here",
-    "One Per Line",
-    "Exactly As They Should Appear On Records"
+    "Reed, Tasha",
+    "Fall, Chase",
+    "Deen, Hailey"
   ],
   "instructors": [
-    "Charissa Sullivan"
+    "Charissa Sullivan",
+    "Yvelize Mullen"
   ]
 }
