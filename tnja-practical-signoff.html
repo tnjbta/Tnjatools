@@ -59,7 +59,7 @@ var PROCEDURES = [
 }
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Inter',system-ui,sans-serif;background:var(--blush);color:var(--ink);min-height:100vh;line-height:1.5}
-.wrap{max-width:560px;margin:0 auto;padding:20px 16px 56px}
+.wrap{max-width:900px;margin:0 auto;padding:20px 16px 56px}
 header{text-align:center;padding:22px 0 8px}
 header img{max-width:210px;width:60%;height:auto;display:block;margin:0 auto 6px}
 .brand{font-family:'Fraunces',serif;font-weight:900;font-size:1.5rem;color:var(--noir)}
@@ -72,7 +72,7 @@ label.top{display:block;font-weight:700;font-size:.9rem;color:var(--noir);margin
 label.top:first-child{margin-top:0}
 select,input[type=date]{width:100%;font:inherit;font-size:1rem;padding:13px 12px;border:1.6px solid var(--line);border-radius:12px;background:#fff;color:var(--ink)}
 select:focus,input:focus{outline:3px solid var(--coral-soft);border-color:var(--coral)}
-.procs{display:grid;gap:9px}
+.procs{display:grid;gap:9px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
 .proc{display:block;border:1.6px solid var(--line);border-radius:12px;padding:12px 13px;cursor:pointer;background:#fff;transition:border-color .12s, background .12s}
 .proc input{position:absolute;opacity:0;pointer-events:none}
 .proc .t{font-weight:700;font-size:.95rem;color:var(--noir)}
@@ -95,6 +95,12 @@ button.ghost:hover{border-color:var(--coral)}
 .ticket .note{font-size:.8rem;color:var(--gray);margin-top:12px}
 .err{color:#B3403F;font-size:.82rem;font-weight:600;margin-top:6px;display:none}
 footer{margin-top:30px;text-align:center;font-size:.7rem;color:var(--gray);line-height:1.6}
+@media (min-width:760px){
+  .wrap{padding:28px 28px 64px}
+  .card{padding:28px 30px}
+  .fieldgrid{display:grid;grid-template-columns:1fr 1fr;gap:0 26px;align-items:start}
+  header img{max-width:240px}
+}
 @media (prefers-reduced-motion: reduce){*{transition:none!important}}
 </style>
 </head>
@@ -109,17 +115,22 @@ footer{margin-top:30px;text-align:center;font-size:.7rem;color:var(--gray);line-
 <div class="rules"><b>On-site only.</b> One submission = one completed set. Log your procedure at your scheduled on-site session and have your instructor confirm before submitting. Logs made outside scheduled sessions without instructor approval will be removed; repeat occurrences require disciplinary action.</div>
 
 <div class="card" id="formCard">
-  <label class="top" for="student">Student name</label>
-  <select id="student"><option value="">Loading roster…</option></select>
+  <div class="fieldgrid">
+    <div>
+      <label class="top" for="student">Student name</label>
+      <select id="student"><option value="">Loading roster…</option></select>
+    </div>
+    <div>
+      <label class="top" for="instructor">Instructor confirming this log</label>
+      <select id="instructor"></select>
+    </div>
+  </div>
 
   <label class="top">Procedure — select the set you actually performed</label>
   <div class="procs" id="procs"></div>
 
   <label class="top">Date of performance — set automatically, cannot be changed</label>
   <div id="lockdate" style="padding:13px 12px;border:1.6px solid var(--line);border-radius:12px;background:var(--blush);font-weight:700;color:var(--noir)"></div>
-
-  <label class="top" for="instructor">Instructor confirming this log</label>
-  <select id="instructor"></select>
 
   <label style="display:flex;gap:10px;align-items:flex-start;margin-top:18px;padding:13px 14px;border:1.6px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;font-size:.83rem;line-height:1.55;color:var(--ink)">
     <input type="checkbox" id="esign" style="margin-top:3px;width:18px;height:18px;accent-color:#E4706F;flex:0 0 auto">
@@ -151,7 +162,7 @@ footer{margin-top:30px;text-align:center;font-size:.7rem;color:var(--gray);line-
 
 <script>
 "use strict";
-var sinkLoads=0, pendingTimer=null, reportedToLMS=false;
+var sinkLoads=0, pendingTimer=null;
 
 function el(id){return document.getElementById(id);}
 function esc(s){var d=document.createElement('div');d.textContent=s;return d.innerHTML;}
@@ -248,11 +259,6 @@ function sent(student,proc,date,inst){
   el('tDate').innerHTML='Date: <b>'+p[1]+'-'+p[2]+'-'+p[0]+'</b>';
   el('tInst').innerHTML='Confirmed by: <b>'+esc(inst)+'</b>';
   window.scrollTo({top:0,behavior:'smooth'});
-  if(window.SCORM && !reportedToLMS){
-    reportedToLMS=true;
-    SCORM.report(100, true);
-    SCORM.detail("PracticalSignOff|student="+student+"|proc="+proc+"|date="+date+"|instructor="+inst);
-  }
 }
 
 function another(){
